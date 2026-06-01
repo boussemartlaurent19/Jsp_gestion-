@@ -754,6 +754,28 @@ function showToast(message, type) {
 function doLogin() {
     const user = document.getElementById('loginUser').value.trim();
     const pass = document.getElementById('loginPass').value;
+
+    // Vérifier si les utilisateurs par défaut existent encore dans DB
+    const defaultUsers = [
+        { id: 'super', name: 'Super Admin', pass: 'super123', role: 'super' },
+        { id: 'admin', name: 'Administrateur', pass: 'admin123', role: 'admin' },
+        { id: 'consult', name: 'Consultant', pass: 'consult123', role: 'consult' }
+    ];
+
+    // Si DB.users est vide ou manquant, restaurer les utilisateurs par défaut
+    if (!DB.users || DB.users.length === 0) {
+        DB.users = JSON.parse(JSON.stringify(defaultUsers));
+        saveDB();
+    }
+
+    // Vérifier aussi si les comptes par défaut ont été supprimés/modifiés
+    defaultUsers.forEach(du => {
+        const exists = DB.users.find(u => u.id === du.id);
+        if (!exists) {
+            DB.users.push(du);
+        }
+    });
+
     const found = DB.users.find(u => u.id === user && u.pass === pass);
     if (found) {
         currentUser = found;
@@ -768,6 +790,9 @@ function doLogin() {
         showToast('Bienvenue ' + found.name + ' !', 'success');
     } else {
         document.getElementById('loginError').classList.remove('hidden');
+        // Afficher la liste des identifiants valides pour debug
+        const validIds = DB.users.map(u => u.id).join(', ');
+        console.log('Identifiants valides dans DB:', validIds);
     }
 }
 
